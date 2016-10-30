@@ -63,7 +63,6 @@ int init_shared_memory(){
     printf("Printer server initialized shared memory with a capacity of %d jobs\n",shared_mem->queuesize);
 
 }
-//TODO hook quit to release shared mem
 
 void catch_signal( int the_signal ) {
     signal( the_signal, catch_signal );
@@ -108,7 +107,10 @@ int main(int argc, char argv[]){
 
     while(1){
         //wait to get the mutex
-        sem_wait(&shared_mem->underflow);
+        if(sem_trywait(&shared_mem->overflow!=0)){
+            printf("Job queue is empty, waiting for job...\n");
+            sem_wait(&shared_mem->underflow);
+        }
         sem_wait(&shared_mem->mutex);
         //execute a print job and print info
         struct Job currentjob = shared_mem->joblist[shared_mem->qrear];
@@ -120,5 +122,7 @@ int main(int argc, char argv[]){
 
         sem_post(&shared_mem->mutex);
         sem_post(&shared_mem->overflow);
+        //TODO wait outside of critical region
+        //Make more function for main
     }
 }
