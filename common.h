@@ -19,6 +19,7 @@
 struct Job{
     char name[50];
     int time;
+    int ownerpid;
 };
 
 

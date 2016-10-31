@@ -117,8 +117,8 @@ int main(int argc, char argv[]){
         sem_wait(&shared_mem->mutex);
         //execute a print job and print info
         jobnum = shared_mem->qrear;
-        struct Job currentjob = shared_mem->joblist[shared_mem->qrear];
-        printf("\nProcessing job #%d\nJob name: \"%s\"\nJob time: %d\n",shared_mem->qrear, currentjob.name, currentjob.time);
+        struct Job currentjob = shared_mem->joblist[shared_mem->qrear%shared_mem->queuesize];
+        printf("\n----------\nProcessing job #%d\nJob name: \"%s\"\nJob owner: %d\nJob time: %d\n",shared_mem->qrear, currentjob.name, currentjob.ownerpid, currentjob.time);
 
         shared_mem->qrear++;
         shared_mem->jobcount--;
@@ -127,7 +127,7 @@ int main(int argc, char argv[]){
         sem_post(&shared_mem->overflow);
 
         sleep(currentjob.time);     //Execute the job       
-        printf("Job #%i done. \n\n", jobnum);
+        printf("Job #%i done. \n----------\n\n", jobnum);
         //TODO Make more function for main
     }
 }
