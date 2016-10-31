@@ -101,11 +101,11 @@ int main(int argc, char argv[]){
     }
 
     shm_exists = 0;     //var that notes if the shm has to be init
-    //First create the shared mem
-    setup_shared_memory();
+
+    setup_shared_memory();      //Create or open the shared memory
     attach_shared_memory();
     if(!shm_exists){            //init shm only if first server
-        init_shared_memory();   //also init the semaphore
+        init_shared_memory();   //also init the semaphores
     }else{
         printf("Skipped initialization since using already created shared memory\n");
     }
@@ -115,19 +115,21 @@ int main(int argc, char argv[]){
         //wait to get the mutex
         sem_wait(&shared_mem->underflow);
         sem_wait(&shared_mem->mutex);
+
         //execute a print job and print info
-        jobnum = shared_mem->qrear;
-        struct Job currentjob = shared_mem->joblist[shared_mem->qrear%shared_mem->queuesize];
+        jobnum = shared_mem->qrear;         //update job number
+        struct Job currentjob = shared_mem->joblist[shared_mem->qrear%shared_mem->queuesize];       //load the job in a local struct
         printf("\n----------\nProcessing job #%d\nJob name: \"%s\"\nJob owner: %d\nJob time: %d\n",shared_mem->qrear, currentjob.name, currentjob.ownerpid, currentjob.time);
 
-        shared_mem->qrear++;
-        shared_mem->jobcount--;
+        shared_mem->qrear++;            //update the rear of the job queue (in an array)
+        shared_mem->jobcount--;         //There is one less job in the queue
 
+        //Exit the critical region before processing the job (no need to stay in)
         sem_post(&shared_mem->mutex);
         sem_post(&shared_mem->overflow);
 
         sleep(currentjob.time);     //Execute the job       
+
         printf("Job #%i done. \n----------\n\n", jobnum);
-        //TODO Make more function for main
     }
 }
