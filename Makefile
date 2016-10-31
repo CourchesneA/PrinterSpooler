@@ -6,7 +6,7 @@ print_server: print_server.c
 	gcc $^ -o $@ $(LIBS)
 
 client: client.c
-	gcc $^ -o $@ $(LIBS)
+	gcc $^ -g -o $@ $(LIBS)
 
 clean:
-	-rm print_server
+	-rm print_server client

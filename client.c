@@ -35,6 +35,7 @@ void catch_signal( int the_signal ) {
     sem_getvalue(&shared_mem->mutex, &temp);
     if(temp != 1)
         sem_post(&shared_mem->mutex);
+    exit(1);
 }
 
 
@@ -55,18 +56,17 @@ int main(int argc, char argv[]){
     while(1){
 
         //Create the job struct
-        char c;
         struct Job printjob;
         printf("What is the name of your job ?\n>");
         scanf("%[^\n]%*c", printjob.name);
         printf("What is the time required for your job ?\n>");
         scanf("%d", &printjob.time);
-        //scanf("%c",&c);
         //wait to get the mutex
-        if(sem_trywait(&shared_mem->overflow!=0)){
-            printf("Buffer is full, waiting for space...\n");
-            sem_wait(&shared_mem->overflow);
-        } 
+        int *status;
+        if(sem_getvalue(&shared_mem->overflow,status)==0){
+            printf("Queue full, waiting for a job to finish\n");
+        }
+        sem_wait(&shared_mem->overflow);
         sem_wait(&shared_mem->mutex);
         //put the job in the queue
         shared_mem->joblist[(shared_mem->qfront)%shared_mem->queuesize] = printjob;
@@ -78,7 +78,16 @@ int main(int argc, char argv[]){
         sem_post(&shared_mem->mutex);
         sem_post(&shared_mem->underflow);
 
-        printf("Press [Enter] to send a new job\n");
+        char c;
+        printf("Do you want to create a new job ? [y/n]\n");
+        c = getchar();  //clear the newline char in stdin
+        c = getchar();
         getchar();
+        //printf("The char is %c\n", c);
+        if(c == 'n' || c == 'N'){
+            printf("No more job to send, exiting\n");
+            exit(0);
+        }
+            
     }
 }

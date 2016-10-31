@@ -70,10 +70,15 @@ void catch_signal( int the_signal ) {
     if(the_signal == SIGQUIT || the_signal == SIGINT ){
         printf( "Cleaning and exiting\n");
         //Clean: Destroy the semaphores and unlink the shared mem
-        sem_destroy(&(shared_mem->underflow));
-        sem_destroy(&(shared_mem->overflow));
-        sem_destroy(&(shared_mem->mutex));
-        printf("Successfully destroyed semaphores\n");
+        int r=0;
+        r+=sem_destroy(&(shared_mem->underflow));
+        r+=sem_destroy(&(shared_mem->overflow));
+        r+=sem_destroy(&(shared_mem->mutex));
+        if(r){
+            printf("Could not destroy semaphores\n");
+        }else{
+            printf("Successfully destroyed semaphores\n");
+        }
         if(shm_unlink(t_shm)==-1){
             printf("Could not unlink the shared memory\n");
             exit(1);
@@ -106,23 +111,23 @@ int main(int argc, char argv[]){
     }
 
     while(1){
+        int jobnum;
         //wait to get the mutex
-        if(sem_trywait(&shared_mem->overflow!=0)){
-            printf("Job queue is empty, waiting for job...\n");
-            sem_wait(&shared_mem->underflow);
-        }
+        sem_wait(&shared_mem->underflow);
         sem_wait(&shared_mem->mutex);
         //execute a print job and print info
+        jobnum = shared_mem->qrear;
         struct Job currentjob = shared_mem->joblist[shared_mem->qrear];
         printf("\nProcessing job #%d\nJob name: \"%s\"\nJob time: %d\n",shared_mem->qrear, currentjob.name, currentjob.time);
-        sleep(currentjob.time);     //Execute the job       
 
         shared_mem->qrear++;
         shared_mem->jobcount--;
 
         sem_post(&shared_mem->mutex);
         sem_post(&shared_mem->overflow);
-        //TODO wait outside of critical region
-        //Make more function for main
+
+        sleep(currentjob.time);     //Execute the job       
+        printf("Job #%i done. \n\n", jobnum);
+        //TODO Make more function for main
     }
 }
